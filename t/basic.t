@@ -4,21 +4,21 @@ use Test::More;
 use Destructure;
 
 subtest 'simple array', sub {
-    _(my $foo, my $bar) = [1,2];
+    A(my $foo, my $bar) = [1,2];
 
     is $foo, 1;
     is $bar, 2;
 };
 
 subtest 'simple array distributed', sub {
-    _(my ($foo, $bar)) = [1,2];
+    A(my ($foo, $bar)) = [1,2];
 
     is $foo, 1;
     is $bar, 2;
 };
 
 subtest 'complex array', sub {
-    _(my $foo, _(my $bar, my $baz)) = [1,[2,3]];
+    A(my $foo, A(my $bar, my $baz)) = [1,[2,3]];
 
     is $foo, 1;
     is $bar, 2;
@@ -26,17 +26,17 @@ subtest 'complex array', sub {
 };
 
 subtest 'hashref', sub {
-    _h(foo => my $qux) = { foo => 'Hello' };
+    H(foo => my $qux) = { foo => 'Hello' };
 
     is $qux, 'Hello';
 };
 
 subtest 'complex hashref', sub {
 
-    _h(
-        foo => _(my $first_foo),
+    H(
+        foo => A(my $first_foo,,,),
         bar => my $bar,
-        baz => _h(
+        baz => H(
             baz => my $bazbaz,
         )
     ) = {
@@ -52,7 +52,7 @@ subtest 'complex hashref', sub {
 };
 
 subtest 'undef ok' => sub {
-    _(my $foo, undef, my $bar) = [1,2,3];
+    A(my $foo, _, my $bar) = [1,2,3];
     is $foo, 1;
     is $bar, 3;
 };

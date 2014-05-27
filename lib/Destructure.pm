@@ -5,17 +5,20 @@ sub import {
     my $callpkg = caller();
     no strict 'refs';
     *{"${callpkg}::_"} = \&_;
-    *{"${callpkg}::_h"} = \&_h;
+    *{"${callpkg}::A"} = \&A;
+    *{"${callpkg}::H"} = \&H;
 }
 
-sub _ : lvalue {
+sub _ { undef }
+
+sub A : lvalue {
     my @refs = map \$_[$_], 0..$#_;
 
     tie my $obj, 'Assign::Array', @refs;
     $obj;
 }
 
-sub _h : lvalue {
+sub H : lvalue {
     my %refs = map {
         ($_[$_*2] => \$_[($_*2)+1]), 
         } 0..($#_ / 2);
