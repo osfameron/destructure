@@ -51,4 +51,10 @@ subtest 'complex hashref', sub {
     is $bazbaz, 'BAZ';
 };
 
+subtest 'undef ok' => sub {
+    _(my $foo, undef, my $bar) = [1,2,3];
+    is $foo, 1;
+    is $bar, 3;
+};
+
 done_testing;
