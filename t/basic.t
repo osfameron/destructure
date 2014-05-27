@@ -31,4 +31,24 @@ subtest 'hashref', sub {
     is $qux, 'Hello';
 };
 
+subtest 'complex hashref', sub {
+
+    _h(
+        foo => _(my $first_foo),
+        bar => my $bar,
+        baz => _h(
+            baz => my $bazbaz,
+        )
+    ) = {
+        foo => [1,2,3],
+        bar => 'BAR',
+        baz => {
+            baz => 'BAZ',
+        }
+    };
+    is $first_foo, 1;
+    is $bar, 'BAR';
+    is $bazbaz, 'BAZ';
+};
+
 done_testing;
