@@ -57,4 +57,14 @@ subtest 'undef ok' => sub {
     is $bar, 3;
 };
 
+subtest 'loop' => sub {
+
+    # can't do `for A(...)`... bah
+    my @a = ( [1,{double => 2}], [3,{double => 6}], [5,{double => 10}] );
+    for (@a) {
+        A(my $foo, H(double=>my $double)) = $_;
+        is $foo * 2, $double, "$foo * 2 == $double";
+    };
+};
+
 done_testing;
