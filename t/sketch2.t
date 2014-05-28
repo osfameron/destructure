@@ -44,6 +44,21 @@ subtest 'scalar', sub {
     is $foo, 10;
 };
 
+subtest 'hash', sub {
+    letB H(foo => my $foo, bar => my $bar) => { foo => 1, bar => 2 };
+
+    is $foo, 1;
+    is $bar, 2;
+};
+
+subtest 'complex', sub {
+    letB H(foo => A(my $foo, my $bar), baz => A(_, my $baz)) => { foo => [1,2], baz => [3,4] };
+
+    is $foo, 1;
+    is $bar, 2;
+    is $baz, 4;
+};
+
 subtest 'forB loop', sub {
     # ugly
     my $bind = A(my $foo, my $bar);

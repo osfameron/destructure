@@ -9,6 +9,7 @@ sub import {
     *{"${callpkg}::_"} = \&_;
     *{"${callpkg}::A"} = \&A;
     *{"${callpkg}::S"} = \&S;
+    *{"${callpkg}::H"} = \&H;
     *{"${callpkg}::letB"} = \&letB;
     *{"${callpkg}::forB"} = \&forB;
 }
@@ -38,6 +39,15 @@ sub A {
     my @refs = map _bindScalar( $_[$_] ), 0..$#_;
 
     Bind::Array->new(\@refs);
+}
+
+sub H {
+    my %refs = map {
+        my $idx = $_ * 2;
+        $_[$idx] => _bindScalar( $_[$idx+1 ] ), 
+    } 0..($#_ / 2);
+
+    Bind::Hash->new(\%refs);
 }
 
 sub letB {
@@ -97,6 +107,15 @@ sub assign {
     my ($self, $value) = @_;
     for my $i (0..$#$self) {
         $self->[$i]->assign( $value->[$i] )
+    }
+}
+
+package Bind::Hash;
+our @ISA = 'Bind';
+sub assign {
+    my ($self, $value) = @_;
+    for my $k (keys %$self) {
+        $self->{$k}->assign( $value->{$k} )
     }
 }
 
