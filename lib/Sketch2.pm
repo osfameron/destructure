@@ -8,12 +8,13 @@ sub import {
     no strict 'refs';
     *{"${callpkg}::_"} = \&_;
     *{"${callpkg}::A"} = \&A;
+    *{"${callpkg}::S"} = \&S;
     *{"${callpkg}::letB"} = \&letB;
 }
 
 sub _ { sub {} }
 
-sub bindScalar {
+sub _bindScalar {
     my $ref = shift;
     if (readonly $$ref) {
         Bind::Constant->new($ref);
@@ -29,8 +30,12 @@ sub bindScalar {
     }
 }
 
+sub S {
+    _bindScalar( \$_[0] );
+}
+
 sub A {
-    my @refs = map bindScalar( \$_[$_] ), 0..$#_;
+    my @refs = map _bindScalar( \$_[$_] ), 0..$#_;
 
     Bind::Array->new(\@refs);
 }

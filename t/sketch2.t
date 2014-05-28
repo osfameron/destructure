@@ -25,5 +25,10 @@ subtest 'complex array', sub {
     is $baz, 3;
 };
 
+subtest 'scalar', sub {
+    letB S(my $foo) => 10;
+    is $foo, 10;
+};
+
 
 done_testing;
