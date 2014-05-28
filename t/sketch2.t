@@ -2,6 +2,7 @@ use strict; use warnings;
 
 use Test::More;
 use Sketch2;
+use Test::Exception;
 
 subtest 'simple array', sub {
     letB A(my $foo, my $bar) => [1,2];
@@ -24,11 +25,10 @@ subtest 'literal ', sub {
 };
 
 subtest 'failed literal ', sub {
-    letB A(1, 2, my $foo) => [3,4,5];
 
-    is $foo, 3;
-
-    isa_ok S(2), 'Bind::Constant';
+    throws_ok {
+        letB A(1, 2, my $foo) => [3,4,5];
+    } qr/Couldn't bind 1 to 3/, 'Failed bind throws error';
 };
 
 subtest 'complex array', sub {

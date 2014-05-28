@@ -16,27 +16,26 @@ sub import {
 sub _ { sub {} }
 
 sub _bindScalar {
-    my $ref = shift;
-    if (readonly $$ref) {
-        Bind::Constant->new($ref);
+    if (readonly $_[0]) {
+        Bind::Constant->new(\$_[0]);
     }
-    elsif (blessed $$ref and $$ref->isa('Bind')) {
-        $$ref
+    elsif (blessed $_[0] and $_[0]->isa('Bind')) {
+        $_[0]
     }
-    elsif (ref $$ref and reftype $$ref eq 'CODE') {
-        Bind::Code->new($$ref);
+    elsif (ref $_[0] and reftype $_[0] eq 'CODE') {
+        Bind::Code->new($_[0]);
     }
     else {
-        Bind::Scalar->new($ref);
+        Bind::Scalar->new(\$_[0]);
     }
 }
 
 sub S {
-    _bindScalar( \$_[0] );
+    _bindScalar( $_[0] );
 }
 
 sub A {
-    my @refs = map _bindScalar( \$_[$_] ), 0..$#_;
+    my @refs = map _bindScalar( $_[$_] ), 0..$#_;
 
     Bind::Array->new(\@refs);
 }
@@ -72,6 +71,7 @@ sub assign {
 
 package Bind::Constant;
 our @ISA = 'Bind';
+use Scalar::Util qw(looks_like_number);
 
 sub assign {
     my ($self, $value) = @_;
