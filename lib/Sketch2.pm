@@ -10,6 +10,7 @@ sub import {
     *{"${callpkg}::A"} = \&A;
     *{"${callpkg}::S"} = \&S;
     *{"${callpkg}::letB"} = \&letB;
+    *{"${callpkg}::forB"} = \&forB;
 }
 
 sub _ { sub {} }
@@ -43,6 +44,16 @@ sub A {
 sub letB {
     my ($bind, $value) = @_;
     $bind->assign($value);
+}
+
+sub forB {
+    my $sub = pop;
+    my ($bind, @values) = @_;
+
+    for my $value (@values) {
+        $bind->assign($value);
+        $sub->();
+    }
 }
 
 package Bind;
