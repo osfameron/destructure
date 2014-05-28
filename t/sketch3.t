@@ -29,4 +29,10 @@ subtest 'Lexical sugar works called multiple times' => sub {
     test(10);
 };
 
+subtest 'Lexical sugar loop' => sub {
+    loop [my $fst, my $snd] ([1,2], [3,4]) { 
+        is $fst+1, $snd, "Loop $fst+1 = $snd"; 
+    }
+};
+
 done_testing;
