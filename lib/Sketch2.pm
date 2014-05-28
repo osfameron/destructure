@@ -13,21 +13,24 @@ sub import {
 
 sub _ { sub {} }
 
+sub bindScalar {
+    my $ref = shift;
+    if (readonly $$ref) {
+        Bind::Constant->new($ref);
+    }
+    elsif (blessed $$ref and $$ref->isa('Bind')) {
+        $$ref
+    }
+    elsif (ref $$ref and reftype $$ref eq 'CODE') {
+        Bind::Code->new($$ref);
+    }
+    else {
+        Bind::Scalar->new($ref);
+    }
+}
+
 sub A {
-    my @refs = map {
-        if (readonly $_[$_]) {
-            Bind::Constant->new(\$_[$_]);
-        }
-        elsif (blessed $_[$_] and $_[$_]->isa('Bind')) {
-            $_[$_];
-        }
-        elsif (reftype $_[$_] eq 'CODE') {
-            Bind::Code->new($_[$_]);
-        }
-        else {
-            Bind::Scalar->new(\$_[$_]);
-        }
-    } 0..$#_;
+    my @refs = map bindScalar( \$_[$_] ), 0..$#_;
 
     Bind::Array->new(\@refs);
 }

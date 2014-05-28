@@ -10,5 +10,20 @@ subtest 'simple array', sub {
     is $bar, 2;
 };
 
+subtest 'undef ', sub {
+    letB A(my $foo, _, my $bar) => [1,2,3];
+
+    is $foo, 1;
+    is $bar, 3;
+};
+
+subtest 'complex array', sub {
+    letB A(my $foo, A(my $bar, my $baz)) => [1, [2, 3] ];
+
+    is $foo, 1;
+    is $bar, 2;
+    is $baz, 3;
+};
+
 
 done_testing;
