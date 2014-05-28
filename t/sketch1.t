@@ -1,7 +1,7 @@
 use strict; use warnings;
 
 use Test::More;
-use Destructure;
+use Sketch1;
 
 subtest 'simple array', sub {
     A(my $foo, my $bar) = [1,2];

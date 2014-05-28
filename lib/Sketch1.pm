@@ -1,5 +1,5 @@
 use strict; use warnings;
-package Destructure;
+package Sketch1;
 
 sub import {
     my $callpkg = caller();
