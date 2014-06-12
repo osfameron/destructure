@@ -145,7 +145,6 @@ BEGIN {
             Devel::Declare::Lexer::Token::EndOfStatement->new(),
         );
 
-        warn join '', map $_->{value}, @new_stream;
         \@new_stream;
     });
 }
