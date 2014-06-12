@@ -5,18 +5,22 @@ use Scalar::Util qw(blessed readonly reftype);
 use List::Util 'pairmap';
 use Sub::Exporter -setup => {
     exports => [
-        qw( A S H )
+        qw( C A S H )
     ],
     groups => {
-        default => [ qw( A S H ) ],
+        default => [ qw( C A S H ) ],
     }
 };
 
 sub H {
-    my @slurp = @_ % 2 ? Bind::Slurp::Hash->new( $_[-1] ) : ();
+    my @slurp = @_ % 2 ? S($_[-1]) : ();
     pop @_ if @slurp;
     my @match = pairmap { Bind::Hash::Key->new($a, S($b)) } @_;
     Bind::Hash->new( @match, @slurp );
+}
+
+sub C {
+    Bind::Constant->new(@_);
 }
 
 sub A {
@@ -27,9 +31,18 @@ sub S {
     if (blessed $_[0] and $_[0]->isa('Bind')) {
         return $_[0];
     }
+    if (readonly $_[0]) {
+        return C(@_);
+    }
     if (ref $_[0]) {
         if (reftype $_[0] eq 'ARRAY') {
             return Bind::Slurp::Array->new($_[0]);
+        }
+        if (reftype $_[0] eq 'HASH') {
+            return Bind::Slurp::Hash->new($_[0]);
+        }
+        if (reftype $_[0] eq 'SCALAR') {
+            return Bind::Constant->new(${$_[0]});
         }
     }
     # constant
@@ -69,6 +82,33 @@ sub _match {
     return 'No values' unless @_;
     my ($value, @rest) = @_;
     return sub { $$self = $value }, @rest;
+}
+
+package Bind::Constant;
+our @ISA = ('Bind');
+use Scalar::Util qw(looks_like_number);
+
+sub new {
+    my $class = shift;
+    bless \$_[0], $class;
+}
+
+sub _match {
+    my $self = shift;
+    return 'No values' unless @_;
+    my ($value, @rest) = @_;
+    my $exp = $$self;
+
+    if (! defined($exp)) {
+        return "Expected undefined but got $value" if defined $value;
+    }
+    elsif (looks_like_number($value)) {
+        return "Expected $exp but got $value" unless $value == $exp;
+    }
+    else {
+        return "Expected $exp but got $value" unless $value eq $exp;
+    }
+    return sub () {}, @rest; # noop
 }
 
 package Bind::Array;
@@ -127,13 +167,15 @@ sub _match {
     my $self = shift;
     return 'No values' unless @_;
     my ($value, @rest) = @_;
-    return 'Not a hash ref!' unless reftype $value eq 'HASH';
+    return 'Not a hash ref!' unless ref $value and reftype $value eq 'HASH';
     my %values = %$value;
 
     my @matches;
     for my $exp (@$self) {
-        (my $match, %values) = $exp->_match(%values);
+        my ($match, @values) = $exp->_match(%values);
+        return 'Bad hash returned' if @values % 2;
         return $match unless ref $match;
+        %values = @values;
         push @matches, $match;
     }
     return sprintf 'Too many values (%d remaining)', (scalar keys %values)
