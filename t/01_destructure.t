@@ -195,4 +195,16 @@ subtest 'Types' => sub {
     };
 };
 
+subtest 'match_' => sub {
+    S(my $one)->match_(1)->bind;
+    is $one, 1;
+
+    A(my $foo, my $bar)->match_(1,2)->bind;
+    is $foo, 1;
+    is $bar, 2;
+
+    H(baz => my $baz)->match_(baz => 3)->bind;
+    is $baz, 3;
+};
+
 done_testing;

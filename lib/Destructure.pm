@@ -52,7 +52,7 @@ sub S {
 sub _parse_scalar {
     my $ary = shift;
     my $type = $ary->[0]->$_isa('Type::Tiny') ? shift @$ary : undef;
-
+    
     scalar @$ary or die "Nothing to parse!";
 
     my $S = do {
@@ -92,7 +92,7 @@ sub new {
 }
 
 sub match {
-    my ($match, @remainder) = shift->_match(@_);
+    my ($match, @remainder) = shift->doMatch(@_);
 
     if (ref $match) {
         return sprintf 'Too many values (%d remaining)', (scalar @remainder)
@@ -104,6 +104,14 @@ sub match {
     }
 }
 
+sub match_ {
+    my $self = shift;
+    $self->munge_at_underscore(\@_);
+    $self->match(@_);
+}
+
+sub munge_at_underscore { }
+
 package Bind::Scalar;
 our @ISA = ('Bind');
 
@@ -112,7 +120,7 @@ sub new {
     bless \$_[0], $class;
 }
 
-sub _match {
+sub doMatch {
     my $self = shift;
     return 'No values' unless @_;
     my ($value, @rest) = @_;
@@ -122,12 +130,17 @@ sub _match {
 package Bind::Type;
 our @ISA = ('Bind');
 
-sub _match {
+sub doMatch {
     my $self = shift;
     return 'No values' unless @_;
 
     my $error; $error = $self->[0]->validate(@_) and return $error;
-    return $self->[1]->_match(@_);
+    return $self->[1]->doMatch(@_);
+}
+
+sub munge_at_underscore { 
+    my ($self, $at_ref) = shift;
+    $self->[1]->munge_at_underscore($at_ref);
 }
 
 package Bind::Constant;
@@ -139,7 +152,7 @@ sub new {
     bless \$_[0], $class;
 }
 
-sub _match {
+sub doMatch {
     my $self = shift;
     return 'No values' unless @_;
     my ($value, @rest) = @_;
@@ -166,7 +179,7 @@ sub new {
     bless \@_, $class;
 }
 
-sub _match {
+sub doMatch {
     my $self = shift;
     return 'No values' unless @_;
     my ($value, @rest) = @_;
@@ -175,13 +188,18 @@ sub _match {
        
     my @matches;
     for my $exp (@$self) {
-        (my $match, @values) = $exp->_match(@values);
+        (my $match, @values) = $exp->doMatch(@values);
         return $match unless ref $match;
         push @matches, $match;
     }
     return sprintf 'Too many values (%d remaining)', (scalar @values)
         if @values;
     return sub { map $_->(), @matches }, @rest;
+}
+
+sub munge_at_underscore { 
+    my ($self, $at_ref) = @_;
+    @$at_ref = ([@$at_ref]); # NB: losing bind
 }
 
 package Bind::Slurp::Array;
@@ -194,7 +212,7 @@ sub new {
     bless $array_ref, $class;
 }
 
-sub _match {
+sub doMatch {
     my ($self, @values) = @_;
     return sub { @$self = @values };
 }
@@ -209,7 +227,7 @@ sub new {
     bless \@_, $class;
 }
 
-sub _match {
+sub doMatch {
     my $self = shift;
     return 'No values' unless @_;
     my ($value, @rest) = @_;
@@ -218,7 +236,7 @@ sub _match {
 
     my @matches;
     for my $exp (@$self) {
-        my ($match, @values) = $exp->_match(%values);
+        my ($match, @values) = $exp->doMatch(%values);
         return 'Bad hash returned' if @values % 2;
         return $match unless ref $match;
         %values = @values;
@@ -230,6 +248,11 @@ sub _match {
     return sub { map $_->(), @matches }, @rest;
 }
 
+sub munge_at_underscore { 
+    my ($self, $at_ref) = @_;
+    @$at_ref = ({ @$at_ref });
+}
+
 package Bind::Hash::Key;
 our @ISA = ('Bind');
 
@@ -238,12 +261,12 @@ sub new {
     bless \@_, $class; # [$key, $value]
 }
 
-sub _match {
+sub doMatch {
     my ($self, %hash) = @_;
     my $key = $self->[0];
     return "No such key $key" unless exists $hash{$key};
     my $value = delete $hash{$key};
-    my ($match) = $self->[1]->_match($value);
+    my ($match) = $self->[1]->doMatch($value);
     return $match unless ref $match;
     return $match, %hash;
 }
@@ -258,7 +281,7 @@ sub new {
     bless $hash_ref, $class;
 }
 
-sub _match {
+sub doMatch {
     my ($self, %values) = @_;
     return sub { %$self = %values };
 }
