@@ -168,4 +168,31 @@ subtest 'Unknowns' => sub {
     is $foo, 1;
 };
 
+subtest 'Types' => sub {
+    use Types::Standard ':all';
+    my $decl = S( Int,my $foo );
+
+    like $decl->match( 'hello' ), qr/did not pass type constraint "Int"/;
+    $decl->match( 10 )->bind;
+    is $foo, 10;
+
+    subtest 'Types in array' => sub {
+        my $decl = A( Int,my $foo, Str,my $bar );
+        like $decl->match([ 'hello', 'hello' ] ), qr/did not pass type constraint "Int"/;
+        like $decl->match([ 1, undef ] ), qr/did not pass type constraint "Str"/;
+        $decl->match([ 10, 'hello'] )->bind;
+        is $foo, 10;
+        is $bar, 'hello';
+    };
+
+    subtest 'Types in hash' => sub {
+        my $decl = H( foo => Int,my $foo, bar => Str,my $bar );
+        like $decl->match({ foo => 'hello', bar => 'hello' } ), qr/did not pass type constraint "Int"/;
+        like $decl->match({ foo => 1, bar => undef } ), qr/did not pass type constraint "Str"/;
+        $decl->match({ foo => 10, bar => 'hello'} )->bind;
+        is $foo, 10;
+        is $bar, 'hello';
+    };
+};
+
 done_testing;

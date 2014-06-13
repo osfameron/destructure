@@ -79,7 +79,7 @@ sub _parse_scalar {
     };
     shift @$ary;
     if ($type) {
-        return 'TODO';
+        return Bind::Type->new($type, $S);
     }
     return $S;
 }
@@ -117,6 +117,17 @@ sub _match {
     return 'No values' unless @_;
     my ($value, @rest) = @_;
     return sub { $$self = $value }, @rest;
+}
+
+package Bind::Type;
+our @ISA = ('Bind');
+
+sub _match {
+    my $self = shift;
+    return 'No values' unless @_;
+
+    my $error; $error = $self->[0]->validate(@_) and return $error;
+    return $self->[1]->_match(@_);
 }
 
 package Bind::Constant;
