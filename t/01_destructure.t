@@ -1,4 +1,5 @@
 use Test::More;
+use Test::Exception;
 use lib 'lib';
 use Destructure;
 use strict; use warnings;
@@ -138,9 +139,9 @@ subtest 'Hash' => sub {
     };
 
     subtest 'No slurp at end of hash' => sub {
-        my $decl = H( foo => my $foo, my $bar );
-        like $decl->match({ foo => 1 }), qr/No values/;
-        like $decl->match({ foo => 1, bar => 2 }), qr/Bad hash/;
+        throws_ok {
+            my $decl = H( foo => my $foo, my $bar );
+        } qr/Nothing to parse/;
     };
 };
 

@@ -3,6 +3,8 @@ use strict; use warnings;
 package Destructure;
 use Scalar::Util qw(blessed readonly reftype);
 use List::Util 'pairmap';
+use Safe::Isa;
+
 use Sub::Exporter -setup => {
     exports => [
         qw( C A S H )
@@ -13,10 +15,21 @@ use Sub::Exporter -setup => {
 };
 
 sub H {
-    my @slurp = @_ % 2 ? S($_[-1]) : ();
-    pop @_ if @slurp;
-    my @match = pairmap { Bind::Hash::Key->new($a, S($b)) } @_;
-    Bind::Hash->new( @match, @slurp );
+    # we get either:
+    #   key => $bind (possibly including type)
+    #   $bind_slurpy
+    my @matchers;
+    while (@_) {
+        my $key = ref $_[0] ? undef : shift;
+        my $matcher = _parse_scalar(\@_);
+        if ($key) {
+            push @matchers, Bind::Hash::Key->new($key, $matcher);
+        }
+        else {
+            push @matchers, $matcher;
+        }
+    }
+    Bind::Hash->new( @matchers );
 }
 
 sub C {
@@ -24,29 +37,51 @@ sub C {
 }
 
 sub A {
-    Bind::Array->new(map { S($_) } @_);
+    my @matchers;
+    while (@_) {
+        my $matcher = _parse_scalar(\@_);
+        push @matchers, $matcher;
+    }
+    Bind::Array->new(@matchers);
 }
 
 sub S {
-    if (blessed $_[0] and $_[0]->isa('Bind')) {
-        return $_[0];
-    }
-    if (readonly $_[0]) {
-        return C(@_);
-    }
-    if (ref $_[0]) {
-        if (reftype $_[0] eq 'ARRAY') {
-            return Bind::Slurp::Array->new($_[0]);
+    _parse_scalar(\@_);
+}
+
+sub _parse_scalar {
+    my $ary = shift;
+    my $type = $ary->[0]->$_isa('Type::Tiny') ? shift @$ary : undef;
+
+    scalar @$ary or die "Nothing to parse!";
+
+    my $S = do {
+        if ($ary->[0]->$_isa('Bind')) { $ary->[0] }
+        elsif (readonly $ary->[0]) { C($ary->[0]) }
+        elsif (ref $ary->[0]) {
+            if (reftype $ary->[0] eq 'ARRAY') {
+                Bind::Slurp::Array->new($ary->[0]);
+            }
+            elsif (reftype $ary->[0] eq 'HASH') {
+                Bind::Slurp::Hash->new($ary->[0]);
+            }
+            elsif (reftype $ary->[0] eq 'SCALAR') {
+                Bind::Constant->new(${$ary->[0]});
+            }
+            else {
+                die "Unhandled reftype!" . reftype $ary->[0];
+            }
         }
-        if (reftype $_[0] eq 'HASH') {
-            return Bind::Slurp::Hash->new($_[0]);
+        # constant
+        else {
+            Bind::Scalar->new($ary->[0]);
         }
-        if (reftype $_[0] eq 'SCALAR') {
-            return Bind::Constant->new(${$_[0]});
-        }
+    };
+    shift @$ary;
+    if ($type) {
+        return 'TODO';
     }
-    # constant
-    return Bind::Scalar->new(@_);
+    return $S;
 }
 
 package Bind;
