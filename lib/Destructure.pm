@@ -56,7 +56,9 @@ sub S {
 
 sub _parse_scalar {
     my $ary = shift;
-    my $type = $ary->[0]->$_isa('Type::Tiny') ? shift @$ary : undef;
+
+    # did we get a type (e.g. something that ->can('validate') like Type::Tiny ?
+    my $type = $ary->[0]->$_can('validate') ? shift @$ary : undef;
     
     scalar @$ary or die "Nothing to parse!";
 
