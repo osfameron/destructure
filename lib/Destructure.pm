@@ -7,12 +7,17 @@ use Safe::Isa;
 
 use Sub::Exporter -setup => {
     exports => [
-        qw( C A S H )
+        qw( C A S H let )
     ],
     groups => {
-        default => [ qw( C A S H ) ],
+        default => [ qw( C A S H let ) ],
     }
 };
+
+sub let ($) :lvalue {
+    tie my $obj, 'Bind::Assign', $_[0];
+    $obj;
+}
 
 sub H {
     # we get either:
@@ -82,6 +87,22 @@ sub _parse_scalar {
         return Bind::Type->new($type, $S);
     }
     return $S;
+}
+
+package Bind::Assign;
+use base 'Tie::Scalar';
+use strict; use warnings;
+
+sub TIESCALAR {
+    my ($class, $bind) = @_;
+    bless \$bind, $class;
+}
+
+sub STORE {
+    my ($self, $value) = @_;
+    my $match = $$self->match($value);
+    die $match unless ref $match;
+    $match->bind;
 }
 
 package Bind;

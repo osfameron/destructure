@@ -207,4 +207,19 @@ subtest 'match_' => sub {
     is $baz, 3;
 };
 
+subtest 'let' => sub {
+    let S(my $one) = 1;
+    is $one, 1;
+
+    let A($one, A(my $two, my $three)) = ['one', ['two', 'three']];
+
+    is $one, 'one';
+    is $two, 'two';
+    is $three, 'three';
+
+    throws_ok {
+        let A($one, $two) = [1];
+    } qr/No values/;
+};
+
 done_testing;
