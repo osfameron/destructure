@@ -112,23 +112,4 @@ sub munge_bind_list {
     );
 }
 
-package main;
-use strict; use warnings;
-
-my @strings = (
-    'my [  $foo , Str $bar, 1, undef, [ $baz ] ] = 1',
-    '{ foo => my Int $foo , bar => Str $bar, %rest }',
-    '{ foo => [\undef, "this is a { test" ] }',
-    "my { foo # wibble , \$baz \n => \$bar }",
-    "my [ foo # wibble , \$baz \n => \$bar ]",
-);
-
-use feature 'say';
-for (@strings) {
-    say "WAS: $_";
-    my ($munged) = Destructure::Sugar::munge_bind($_);
-    say "NOW: $munged";
-    say '';
-}
-
 1;
