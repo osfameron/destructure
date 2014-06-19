@@ -1,16 +1,55 @@
 package Destructure::Sugar;
 use strict; use warnings;
 use Text::Balanced qw/ extract_codeblock extract_variable extract_quotelike /;
+use Carp 'croak';
+
+#######
+# extract this part out?
+use Keyword::Simple;
+
+sub import {
+    Keyword::Simple::define 'let', sub {
+        my ($ref) = @_;
+        my ($let, $rest) = munge_let($$ref);
+        $$ref = $let . $rest;
+    };
+}
+
+sub unimport {
+    Keyword::Simple::undefine 'let';
+}
+
+#######
+
+sub munge_let {
+    my $text = shift;
+
+    my ($bind, $rest) = munge_bind($text);
+    croak "Couldn't extract bind block" unless $bind;
+
+    $rest =~ s/ \s* = \s* //x or croak 'Expected =';
+
+    (my $block, $rest) = extract_codeblock( $rest, '(){}[]' );
+    croak "Couldn't extract a block" unless $block;
+
+    my $munged = join ' ',
+        ';',
+        $bind,
+        '->match(', $block, ')',
+        '->bind';
+    warn $munged;
+    return ($munged, $rest);
+};
 
 sub munge_bind {
     my $text = shift;
 
     my $my = $text=~s/^ \s* my\b//x;
 
-    my ($block) = extract_codeblock( $text, '(){}[]' );
+    my ($block, $rest) = extract_codeblock( $text, '(){}[]' );
 
-    munge_bind_list( $block, $my );
-    # returns ($munged, $rest);
+    my ($munged, $munged_rest) = munge_bind_list( $block, $my );
+    return ($munged, $munged_rest . $rest);
 }
 
 my %map = (
@@ -23,7 +62,7 @@ sub munge_bind_list {
     return unless $block;
 
     $block =~ s/ ^ (.) //x;
-    my $opening = $map{$1} or die "Bad list opener: $1 ($block)";
+    my $opening = $map{$1} or croak "Bad list opener: $1 ($block)";
 
     my @out = ($opening);
 
@@ -43,13 +82,14 @@ sub munge_bind_list {
         $block =~s/^ ( (?: \s | , | => )+ ) //x # skip whitespace and commas
             and push @out, $1;
 
-        if ($block =~ /^ (?: 
-                \{
-                |   # either opening curly or square
-                \[ 
-            )/x) {
-            (my $sublist, $block) = munge_bind_list($block, $my);
+        my ($subblock, $subblock_rest) = extract_codeblock($block, '{}[]' );
+        if ($subblock) {
+            warn "FROM {{{ $block }}}";
+            warn "GOT {{{ $subblock }}}";
+            my ($sublist, $sublist_rest) = munge_bind_list($subblock, $my);
+            warn "NOW {{{ $sublist }}}";
             push @out, $sublist;
+            $block = $sublist_rest . $subblock_rest;
             next;
         }
         my ($var, $rest, $prefix) = extract_variable($block, qr/
