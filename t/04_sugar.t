@@ -33,7 +33,7 @@ subtest 'bindings' => sub {
             'Hash with 2 elements',
         ],
         [
-            'my [{ x => $x1, y => $y1 }, { x => $x2, y => $y2 }]',
+            'my [{ x => $x1, "y" => $y1 }, { x => $x2, "y" => $y2 }]',
             'AoH',
         ],
     );

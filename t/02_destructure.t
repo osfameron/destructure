@@ -121,14 +121,6 @@ subtest 'Constants' => sub {
 
     $decl->match([1, 1])->bind;
     is $foo, 1;
-
-    subtest 'Constant undef' => sub {
-        my $decl = A( my $foo, \undef );
-        like $decl->match([1, 2]), qr/Expected/;
-
-        $decl->match([1, undef])->bind;
-        is $foo, 1;
-    };
 };
 
 subtest 'Unknowns' => sub {
