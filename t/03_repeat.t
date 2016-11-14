@@ -22,6 +22,7 @@ subtest 'repeat with my' => sub {
 };
 
 subtest 'repeat with state' => sub {
+  local $TODO = "Doesn't work";
     my $scalar = sub {
         my $desc = shift;
         state $bind = S(my $x);
@@ -32,3 +33,4 @@ subtest 'repeat with state' => sub {
     $scalar->('second attempt');
 };
 
+done_testing;

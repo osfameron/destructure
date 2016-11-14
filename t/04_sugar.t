@@ -52,7 +52,7 @@ subtest 'bindings' => sub {
 };
 
 subtest 'let' => sub {
-    my $let = Destructure::Sugar::munge_let('my [$x, $y] = [1, 2];');
+    my ($let) = Destructure::Sugar::munge_let('my [$x, $y] = [1, 2];');
     eval "$let; is \$x, 1; is \$y, 2;";
 };
 

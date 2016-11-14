@@ -23,4 +23,11 @@ subtest 'destructuring bind' => sub {
     is $b2, 15;
 };
 
+subtest 'loop' => sub {
+  for ([1, 'a'], [2, 'aa'], [3, 'aaa']) {
+    let my [$a, $b] = [@$_];
+    is length $b, $a, "Length $b";
+  }
+};
+
 done_testing;
